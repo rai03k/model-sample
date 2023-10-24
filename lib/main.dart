@@ -112,8 +112,7 @@ class SecondScreen extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: (){
-                onDescriptionSubmitted(description);
-                Navigator.pop(context); // SecondScreenを閉じる
+                submitDescription(context); // SecondScreenを閉じる
               },
               child: Text('完了'),
             ),
