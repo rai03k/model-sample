@@ -29,21 +29,12 @@ class _FirstScreenState extends State<FirstScreen> {
   String title = '';
   List<TitleModel> titleModels = [];
 
-  void navigateToSecondScreen(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => SecondScreen(
-        onDescriptionSubmitted: (description) {
-          TitleModel titleModel = TitleModel(title, description);
-          addToTitleList(titleModel);
-        },
-      ),
-    ));
-  }
-
-  void addToTitleList(TitleModel titleModel) {
-    setState(() {
-      titleModels.add(titleModel);
-    });
+  void addTitleToList() {
+    if (title.isNotEmpty) {
+      titleModels.add(TitleModel(title, ""));
+      title = "";
+      setState(() {});
+    }
   }
 
   @override
@@ -61,10 +52,11 @@ class _FirstScreenState extends State<FirstScreen> {
               decoration: InputDecoration(labelText: 'タイトル'),
             ),
             ElevatedButton(
-              onPressed: () => navigateToSecondScreen(context),
-              child: Text('次へ'),
+              onPressed: () {
+                addTitleToList();
+              },
+              child: Text('リストに追加'),
             ),
-            // リストビューでTitleModelオブジェクトを表示
             Expanded(
               child: ListView.builder(
                 itemCount: titleModels.length,
@@ -72,7 +64,22 @@ class _FirstScreenState extends State<FirstScreen> {
                   TitleModel item = titleModels[index];
                   return ListTile(
                     title: Text(item.title),
-                    subtitle: Text(item.description),
+                    subtitle: Text(item.description), // 説明をsubtitleに設定
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DescriptionInputScreen(
+                            title: item.title,
+                            onDescriptionSubmitted: (description) {
+                              item.description = description;
+                              Navigator.pop(context);
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -84,17 +91,21 @@ class _FirstScreenState extends State<FirstScreen> {
   }
 }
 
-class SecondScreen extends StatelessWidget {
+class DescriptionInputScreen extends StatefulWidget {
   final Function(String description) onDescriptionSubmitted;
+  final String title;
 
-  SecondScreen({super.key, required this.onDescriptionSubmitted});
+  DescriptionInputScreen({
+    required this.title,
+    required this.onDescriptionSubmitted,
+  });
 
+  @override
+  _DescriptionInputScreenState createState() => _DescriptionInputScreenState();
+}
+
+class _DescriptionInputScreenState extends State<DescriptionInputScreen> {
   String description = '';
-
-  void submitDescription(BuildContext context) {
-    onDescriptionSubmitted(description);
-    Navigator.pop(context); // SecondScreenを閉じる
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,6 +115,7 @@ class SecondScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text('タイトル: ${widget.title}'),
             TextField(
               onChanged: (text) {
                 description = text;
@@ -111,8 +123,8 @@ class SecondScreen extends StatelessWidget {
               decoration: InputDecoration(labelText: '説明'),
             ),
             ElevatedButton(
-              onPressed: (){
-                submitDescription(context); // SecondScreenを閉じる
+              onPressed: () {
+                widget.onDescriptionSubmitted(description);
               },
               child: Text('完了'),
             ),
