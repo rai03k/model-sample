@@ -1,6 +1,7 @@
 # sample
 
 A new Flutter project.
+This is the Repository I refer to when I have trouble modeling.
 
 ## Getting Started
 
