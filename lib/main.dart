@@ -1,4 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:sample/edit_screen.dart';
+import 'package:sample/second_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'memo_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,203 +23,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Color(0xFFffffff),
         brightness: Brightness.light,
-      ),
-      home: LoginPage(),
-    );
-  }
-}
-
-class LoginPage extends StatefulWidget {
-  @override
-  _LoginPageState createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  bool _isObscure = true;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: EdgeInsets.all(36),
-              child: TextField(
-                decoration: InputDecoration(
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.black,
-                      ),
-                    ),
-                    hintText: "メールアドレス",
-                    prefixIcon: Icon(Icons.mail)),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(36),
-              child: TextField(
-                obscureText: _isObscure,
-                decoration: InputDecoration(
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.black,
-                    ),
-                  ),
-                  hintText: "パスワード",
-                  prefixIcon: Icon(Icons.key),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _isObscure ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
-                      setState(() {
-                        _isObscure = !_isObscure;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding:
-                  EdgeInsets.only(top: 36, right: 36, left: 36, bottom: 20),
-              child: Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (context) => MyHomePage()),
-                        (_) => false);
-                  },
-                  child: Text(
-                    "ログイン",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    backgroundColor: Colors.red,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(right: 36, left: 36),
-              child: Divider(),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('既にアカウントをお持ちですか？'),
-                TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => AuthPage()),
-                      );
-                    },
-                    child: Text("新規登録"))
-              ],
-            )
-          ],
+        textTheme: GoogleFonts.sawarabiMinchoTextTheme(
+          Theme.of(context).textTheme,
         ),
       ),
-    );
-  }
-}
-
-class AuthPage extends StatefulWidget {
-  const AuthPage({Key? key}) : super(key: key);
-
-  @override
-  State<AuthPage> createState() => _AuthPageState();
-}
-
-class _AuthPageState extends State<AuthPage> {
-  bool _isObscure = true;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(left: 28),
-              child: TextButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  icon: Icon(Icons.arrow_back),
-                  label: Text('ログイン画面へ戻る')),
-            ),
-            Padding(
-              padding: EdgeInsets.all(36),
-              child: TextField(
-                decoration: InputDecoration(
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.black,
-                      ),
-                    ),
-                    hintText: "メールアドレス",
-                    prefixIcon: Icon(Icons.mail)),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(36),
-              child: TextField(
-                obscureText: _isObscure,
-                decoration: InputDecoration(
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.black,
-                    ),
-                  ),
-                  hintText: "パスワード",
-                  prefixIcon: Icon(Icons.key),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _isObscure ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
-                      setState(() {
-                        _isObscure = !_isObscure;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(36),
-              child: Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  child: Text(
-                    "新規登録",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    backgroundColor: Colors.red,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      home: MyHomePage(),
     );
   }
 }
@@ -227,6 +43,8 @@ class SearchBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class SearchBarState extends State<SearchBar> {
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  late Future<int> _counter;
   final _controller = TextEditingController();
 
   void _submission() {
@@ -238,20 +56,6 @@ class SearchBarState extends State<SearchBar> {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: Padding(
-        padding: EdgeInsets.only(left: 8),
-        child: IconButton(
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-          icon: CircleAvatar(
-            backgroundImage:
-                NetworkImage('https://twitter.com/RaiAppDev/photo'),
-            backgroundColor: Colors.red, // 背景色
-            radius: 16, // 表示したいサイズの半径を指定
-          ),
-        ),
-      ),
       title: SizedBox(
         height: 40,
         child: Container(
@@ -291,21 +95,93 @@ class SearchBarState extends State<SearchBar> {
       actions: [
         IconButton(
           icon: Icon(Icons.lightbulb_outline),
-          onPressed: () => {},
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+          },
         )
       ],
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+  @override
+  State<MyHomePage> createState() => _MyHomePage();
+}
+
+class _MyHomePage extends State<MyHomePage> {
+  List<List<MemoModel>> memoList = [];
+  @override
+  void initState() {
+    super.initState();
+    read();
+  }
+
+  void read() async {
+    memoList.clear();
+    final prefs = await SharedPreferences.getInstance();
+    int count = prefs.getKeys().length;
+
+    for (int i = 0; i < count; i++) {
+      final key = i.toString();
+      if (prefs.containsKey(key)) {
+        final jsonString = prefs.getStringList(key);
+        final jsonMap = json.decode(jsonString![0]);
+
+        final memoModel = MemoModel(
+            id: jsonMap['id'] ?? 0,
+            title: jsonMap['title'] ?? '',
+            memo: jsonMap['memo'] ?? '',
+            createdDate: jsonMap['createdDate'],
+            updatedDate: jsonMap['updatedDate'],
+            tagColor: jsonMap['tagColor'] ?? 0);
+
+        memoList.add([memoModel]);
+      }
+    }
+    setState(() {});
+  }
+
+  Widget listTile(String p_title, String p_updated_date) {
+    return Padding(
+      padding: EdgeInsets.all(12),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black),
+        ),
+        child: ListTile(
+          title: Text(p_title),
+          subtitle: Text(p_updated_date),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => EditScreen()),
+            ).then((value) {
+              read();
+              setState(() {});
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: SearchBar(),
-      drawer: Drawer(),
-      body: Container(
-        margin: const EdgeInsets.all(12),
+      body: ListView.builder(
+        itemCount: memoList.length,
+        itemBuilder: (BuildContext context, int index) {
+          // memoListの各要素を使ってListViewのアイテムを構築
+          final memoData = memoList[index];
+          return listTile(
+            memoData[0].title,
+            memoData[0].updatedDate,
+          );
+        },
       ),
       floatingActionButton: Container(
         decoration: const BoxDecoration(
@@ -325,112 +201,20 @@ class MyHomePage extends StatelessWidget {
           borderRadius: BorderRadius.all(Radius.circular(15)),
         ),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SecondScreen()),
+            ).then((value) {
+              read();
+              setState(() {});
+            });
+          },
           backgroundColor: Colors.transparent,
           elevation: 0,
           child: const Icon(Icons.add),
           foregroundColor: Colors.white,
         ),
-      ),
-    );
-  }
-}
-
-class MyMenuButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        showMenu(
-          context: context,
-          position: RelativeRect.fromLTRB(0, 70, 0, 0),
-          items: [
-            PopupMenuItem(
-              child: Text('Menu Item 1'),
-              value: 'item1',
-            ),
-            PopupMenuItem(
-              child: Text('Menu Item 2'),
-              value: 'item2',
-            ),
-            PopupMenuItem(
-              child: Text('Menu Item 3'),
-              value: 'item3',
-            ),
-          ],
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Icon(Icons.menu),
-      ),
-    );
-  }
-}
-
-class MyDrawer extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  // ここにアイコン画像の設定
-                  backgroundImage: AssetImage('assets/profile_image.jpg'),
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Your Name',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text('プロフィールを編集'),
-            onTap: () {
-              // プロフィール編集がタップされたときの処理
-              Navigator.pop(context); // ドロワーを閉じる
-              // 他の処理を追加
-            },
-          ),
-          ListTile(
-            title: Text('設定'),
-            onTap: () {
-              // 設定がタップされたときの処理
-              Navigator.pop(context); // ドロワーを閉じる
-              // 他の処理を追加
-            },
-          ),
-          ListTile(
-            title: Text('ログアウト'),
-            onTap: () {
-              // ログアウトがタップされたときの処理
-              Navigator.pop(context); // ドロワーを閉じる
-              // 他の処理を追加
-            },
-          ),
-          ListTile(
-            title: Text('アカウントを削除'),
-            onTap: () {
-              // アカウント削除がタップされたときの処理
-              Navigator.pop(context); // ドロワーを閉じる
-              // 他の処理を追加
-            },
-          ),
-        ],
       ),
     );
   }
