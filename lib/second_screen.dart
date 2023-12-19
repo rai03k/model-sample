@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'default.dart';
 import 'memo_model.dart';
 
 class SecondScreen extends StatefulWidget {
@@ -19,13 +20,7 @@ class _SecondScreenState extends State<SecondScreen> {
   int indexColor = 0;
   List<MemoModel> memoData = [];
   late String key;
-  List<Color> colorList = [
-    Colors.red,
-    Colors.blue,
-    Colors.yellow,
-    Colors.green,
-    Colors.purple,
-  ];
+  List<Color> colorList = DefaultData.colorList;
   late Color selectColor;
 
   @override
@@ -118,6 +113,7 @@ class _SecondScreenState extends State<SecondScreen> {
                     child: Container(
                       child: TextField(
                         controller: _titleController,
+                        maxLength: 30,
                         decoration: InputDecoration(
                           labelText: "タイトル",
                         ),

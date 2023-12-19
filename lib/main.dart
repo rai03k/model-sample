@@ -6,6 +6,7 @@ import 'package:sample/edit_screen.dart';
 import 'package:sample/second_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'default.dart';
 import 'memo_model.dart';
 
 void main() {
@@ -143,25 +144,38 @@ class _MyHomePage extends State<MyHomePage> {
     setState(() {});
   }
 
-  Widget listTile(String p_title, String p_updated_date) {
+  Widget listTile(String p_title, String p_updated_date, int indexColor) {
     return Padding(
       padding: EdgeInsets.all(12),
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.black),
+          border: Border.all(width: 0.5, color: Colors.black),
         ),
-        child: ListTile(
-          title: Text(p_title),
-          subtitle: Text(p_updated_date),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => EditScreen()),
-            ).then((value) {
-              read();
-              setState(() {});
-            });
-          },
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Container(
+                width: 12,
+                color: DefaultData.colorList[indexColor],
+              ),
+              Expanded(
+                child: ListTile(
+                  title: Text(p_title),
+                  subtitle: Text(p_updated_date),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => EditScreen()),
+                    ).then((value) {
+                      read();
+                      setState(() {});
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -180,6 +194,7 @@ class _MyHomePage extends State<MyHomePage> {
           return listTile(
             memoData[0].title,
             memoData[0].updatedDate,
+            memoData[0].tagColor,
           );
         },
       ),
