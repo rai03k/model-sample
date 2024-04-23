@@ -8,16 +8,27 @@ import 'default.dart';
 import 'memo_model.dart';
 
 class SecondScreen extends StatefulWidget {
-  const SecondScreen({super.key});
+  const SecondScreen(
+      {this.id, this.title, this.memo, this.indexColor, super.key});
+
+  final int? id;
+  final String? title;
+  final String? memo;
+  final int? indexColor;
 
   @override
   State<SecondScreen> createState() => _SecondScreenState();
 }
 
 class _SecondScreenState extends State<SecondScreen> {
+  int? id;
+  String? title;
+  String? memo;
+  int indexColor = 0;
+
   TextEditingController _memoController = TextEditingController();
   TextEditingController _titleController = TextEditingController();
-  int indexColor = 0;
+
   List<MemoModel> memoData = [];
   late String key;
   List<Color> colorList = DefaultData.colorList;
@@ -26,7 +37,29 @@ class _SecondScreenState extends State<SecondScreen> {
   @override
   void initState() {
     super.initState();
-    selectColor = colorList[0];
+    setState(() {
+      id = widget.id ?? -1;
+      title = widget.title ?? "";
+      memo = widget.memo ?? "";
+      indexColor = widget.indexColor ?? 0;
+    });
+    _titleController.text = title!;
+    _memoController.text = memo!;
+    selectColor = colorList[indexColor];
+  }
+
+  Future update() async {
+    // Map型変換->Json形式にエンコード->リスト化
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    key = id.toString();
+    memoData[0].id = int.parse(key);
+
+    final jsonString = prefs.getStringList(key);
+    final jsonMap = json.decode(jsonString![0]);
+    memoData[0].createdDate = jsonMap['createdDate'];
+
+    List<String> myData = memoData.map((f) => json.encode(f.toJson())).toList();
+    await prefs.setStringList(key, myData);
   }
 
   // データ保存
@@ -44,9 +77,20 @@ class _SecondScreenState extends State<SecondScreen> {
       key = (int.parse(key) + 1).toString();
     }
     memoData[0].id = int.parse(key);
+    memoData[0].createdDate =
+        DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now());
     List<String> myData = memoData.map((f) => json.encode(f.toJson())).toList();
     await prefs.setStringList(key, myData);
-    print(myData);
+  }
+
+  void saveUpdate() {
+    // save
+    if (id == -1) {
+      save();
+      // update
+    } else {
+      update();
+    }
   }
 
   Widget selectTagColor(Color color) {
@@ -85,14 +129,13 @@ class _SecondScreenState extends State<SecondScreen> {
                   id: 0,
                   title: _titleController.text,
                   memo: _memoController.text,
-                  createdDate:
-                      DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now()),
+                  createdDate: "",
                   updatedDate:
                       DateFormat('yyyy-MM-dd-HH-mm-ss').format(DateTime.now()),
-                  tagColor: indexColor,
+                  tagColor: indexColor ?? 0,
                 )
               ];
-              save();
+              saveUpdate();
             }
             Navigator.pop(context, true);
           },

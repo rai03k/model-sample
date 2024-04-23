@@ -1,15 +1,29 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sample/edit_screen.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sample/second_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'default.dart';
 import 'memo_model.dart';
 
+const Map<String, String> UNIT_ID = kReleaseMode
+    ? {
+        'ios': '[YOUR iOS AD UNIT ID]',
+        'android': 'ca-app-pub-1073270249936683~9140897348',
+      }
+    : {
+        'ios': 'ca-app-pub-3940256099942544/2934735716',
+        'android': 'ca-app-pub-1073270249936683/1371068590',
+      };
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+
   runApp(const MyApp());
 }
 
@@ -44,9 +58,8 @@ class SearchBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class SearchBarState extends State<SearchBar> {
-  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
-  late Future<int> _counter;
   final _controller = TextEditingController();
+  var _darkmode = false;
 
   void _submission() {
     setState(() {
@@ -61,7 +74,9 @@ class SearchBarState extends State<SearchBar> {
         height: 40,
         child: Container(
           decoration: BoxDecoration(
-            color: Color(0xFFffffff),
+            color: _darkmode
+                ? DefaultData.backgroundColor[1]
+                : DefaultData.backgroundColor[1],
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Center(
@@ -97,7 +112,9 @@ class SearchBarState extends State<SearchBar> {
         IconButton(
           icon: Icon(Icons.lightbulb_outline),
           onPressed: () async {
-            final prefs = await SharedPreferences.getInstance();
+            setState(() {
+              _darkmode = !_darkmode;
+            });
           },
         )
       ],
@@ -122,29 +139,30 @@ class _MyHomePage extends State<MyHomePage> {
   void read() async {
     memoList.clear();
     final prefs = await SharedPreferences.getInstance();
-    int count = prefs.getKeys().length;
+    Set<String> keys = prefs.getKeys();
 
-    for (int i = 0; i < count; i++) {
-      final key = i.toString();
-      if (prefs.containsKey(key)) {
-        final jsonString = prefs.getStringList(key);
-        final jsonMap = json.decode(jsonString![0]);
+    for (String key in keys) {
+      final jsonString = prefs.getStringList(key);
+      final jsonMap = json.decode(jsonString![0]);
 
-        final memoModel = MemoModel(
-            id: jsonMap['id'] ?? 0,
-            title: jsonMap['title'] ?? '',
-            memo: jsonMap['memo'] ?? '',
-            createdDate: jsonMap['createdDate'],
-            updatedDate: jsonMap['updatedDate'],
-            tagColor: jsonMap['tagColor'] ?? 0);
+      final memoModel = MemoModel(
+        id: jsonMap['id'] ?? 0,
+        title: jsonMap['title'] ?? '',
+        memo: jsonMap['memo'] ?? '',
+        createdDate: jsonMap['createdDate'],
+        updatedDate: jsonMap['updatedDate'],
+        tagColor: jsonMap['tagColor'] ?? 0,
+      );
 
-        memoList.add([memoModel]);
-      }
+      memoList.add([memoModel]);
     }
     setState(() {});
   }
 
-  Widget listTile(String p_title, String p_updated_date, int indexColor) {
+  Widget listTile(int id, String p_title, String p_memo, String p_updated_date,
+      int indexColor) {
+    String updateDate =
+        "${p_updated_date.substring(0, 4)}年${p_updated_date.substring(5, 7)}月${p_updated_date.substring(8, 10)}日";
     return Padding(
       padding: EdgeInsets.all(12),
       child: Container(
@@ -162,11 +180,17 @@ class _MyHomePage extends State<MyHomePage> {
               Expanded(
                 child: ListTile(
                   title: Text(p_title),
-                  subtitle: Text(p_updated_date),
+                  subtitle: Text(updateDate),
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => EditScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => SecondScreen(
+                                id: id,
+                                title: p_title,
+                                memo: p_memo,
+                                indexColor: indexColor,
+                              )),
                     ).then((value) {
                       read();
                       setState(() {});
@@ -183,20 +207,69 @@ class _MyHomePage extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    TargetPlatform os = Theme.of(context).platform;
+
+    BannerAd banner = BannerAd(
+      listener: BannerAdListener(
+        onAdFailedToLoad: (Ad ad, LoadAdError error) {},
+        onAdLoaded: (_) {},
+      ),
+      size: AdSize.banner,
+      adUnitId: UNIT_ID[os == TargetPlatform.iOS ? 'ios' : 'android']!,
+      request: AdRequest(),
+    )..load();
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: SearchBar(),
-      body: ListView.builder(
-        itemCount: memoList.length,
-        itemBuilder: (BuildContext context, int index) {
-          // memoListの各要素を使ってListViewのアイテムを構築
-          final memoData = memoList[index];
-          return listTile(
-            memoData[0].title,
-            memoData[0].updatedDate,
-            memoData[0].tagColor,
-          );
-        },
+      appBar: AppBar(
+        title: Text('ホーム'),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: ListView.builder(
+              itemCount: memoList.length,
+              itemBuilder: (BuildContext context, int index) {
+                final memoData = memoList[index];
+                return Dismissible(
+                  background: Container(
+                    color: Colors.red,
+                    child: const Align(
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.delete_forever,
+                          color: Colors.white,
+                        )),
+                  ),
+
+                  // onDismissed: ウィジェットが閉じられたときに呼び出される
+                  onDismissed: (DismissDirection direction) async {
+                    final SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    setState(() async {
+                      prefs.remove((memoData[0].id).toString());
+                    });
+                  },
+                  key: UniqueKey(), //ValueKey<int>(memoData[0].id),
+                  child: listTile(
+                    memoData[0].id,
+                    memoData[0].title,
+                    memoData[0].memo,
+                    memoData[0].updatedDate,
+                    memoData[0].tagColor,
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            height: 50,
+            child: AdWidget(
+              ad: banner,
+            ),
+          ),
+        ],
       ),
       floatingActionButton: Container(
         decoration: const BoxDecoration(
@@ -207,12 +280,10 @@ class _MyHomePage extends State<MyHomePage> {
               blurRadius: 6.0,
             ),
           ],
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFE32212),
-              Color(0xFFBD271A),
-            ],
-          ),
+          gradient: LinearGradient(colors: <Color>[
+            const Color(0xFFE32212),
+            const Color(0xFFBD271A),
+          ]),
           borderRadius: BorderRadius.all(Radius.circular(15)),
         ),
         child: FloatingActionButton(
